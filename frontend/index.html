@@ -1,69 +1,125 @@
-<!-- frontend/index.html -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Digital Twin - Journal</title>
+    <title>AI Digital Twin</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f9; color: #333; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        #container { width: 90%; max-width: 600px; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #4a4a4a; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f9; color: #333; margin: 0; padding: 1rem; }
+        #main-container { display: flex; gap: 2rem; max-width: 1200px; margin: auto; }
+        .panel { flex: 1; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h1, h2 { text-align: center; color: #4a4a4a; }
         textarea { width: 100%; height: 150px; padding: 10px; border-radius: 4px; border: 1px solid #ccc; font-size: 1rem; margin-bottom: 1rem; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; font-size: 1.1rem; cursor: pointer; }
+        button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; font-size: 1.1rem; cursor: pointer; transition: background-color 0.2s; }
         button:hover { background-color: #0056b3; }
-        #status { text-align: center; margin-top: 1rem; color: green; }
+        #status { text-align: center; margin-top: 1rem; color: green; min-height: 1.2em; }
+        /* Chat styles */
+        #chat-history { height: 300px; border: 1px solid #ccc; border-radius: 4px; padding: 1rem; overflow-y: auto; margin-bottom: 1rem; background-color: #f9f9f9; }
+        #chat-input { display: flex; gap: 1rem; }
+        #questionInput { flex-grow: 1; padding: 10px; border-radius: 4px; border: 1px solid #ccc; }
+        #askButton { flex-shrink: 0; width: auto; padding: 0 1.5rem; }
+        .chat-message { margin-bottom: 0.8rem; }
+        .user-message { text-align: right; color: #0056b3; }
+        .twin-message { text-align: left; background-color: #e9e9eb; padding: 0.5rem 1rem; border-radius: 12px; }
     </style>
 </head>
 <body>
-    <div id="container">
-        <h1>My Digital Twin</h1>
-        <textarea id="journalInput" placeholder="What's on your mind?"></textarea>
-        <button onclick="submitEntry()">Save Entry</button>
-        <p id="status"></p>
+    <div id="main-container">
+        <!-- Panel 1: Journal Entry -->
+        <div id="journal-panel" class="panel">
+            <h2>Write a Journal Entry</h2>
+            <textarea id="journalInput" placeholder="What's on your mind?"></textarea>
+            <button onclick="submitEntry()">Save Entry</button>
+            <p id="status"></p>
+        </div>
+
+        <!-- Panel 2: Chat with Twin -->
+        <div id="chat-panel" class="panel">
+            <h2>Ask Your Twin</h2>
+            <div id="chat-history"></div>
+            <div id="chat-input">
+                <input type="text" id="questionInput" placeholder="Ask about your past thoughts...">
+                <button id="askButton" onclick="askTwin()">Ask</button>
+            </div>
+        </div>
     </div>
 
     <script>
+        // --- Journal Entry Submission (from Phase 2) ---
         async function submitEntry() {
             const content = document.getElementById('journalInput').value;
             const statusEl = document.getElementById('status');
-
-            if (!content) {
-                alert('Please write something in your journal.');
-                return;
-            }
-
-            statusEl.textContent = 'Saving...';
-
+            if (!content) { alert('Please write something.'); return; }
+            statusEl.textContent = 'Analyzing and Saving...';
             try {
                 const response = await fetch('http://127.0.0.1:8000/entries/', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ content: content })
                 });
-
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-
+                if (!response.ok) throw new Error('Network response was not ok');
                 const result = await response.json();
-                console.log('Success:', result);
-                
-                statusEl.textContent = 'Saved successfully!';
-                document.getElementById('journalInput').value = ''; // Clear the textarea
-
+                const sentiment = result.entry.sentiment;
+                statusEl.textContent = `Saved! The sentiment seems ${sentiment}.`;
+                document.getElementById('journalInput').value = '';
             } catch (error) {
                 console.error('Error:', error);
                 statusEl.textContent = 'Failed to save. Is the backend running?';
                 statusEl.style.color = 'red';
             }
-
-            // Clear the status message after a few seconds
-            setTimeout(() => { statusEl.textContent = ''; statusEl.style.color = 'green'; }, 3000);
+            setTimeout(() => { statusEl.textContent = ''; statusEl.style.color = 'green'; }, 4000);
         }
+
+        // --- NEW: Chat with Twin Functionality ---
+        async function askTwin() {
+            const question = document.getElementById('questionInput').value;
+            const chatHistory = document.getElementById('chat-history');
+            if (!question) { alert('Please ask a question.'); return; }
+
+            // Display user's question
+            addMessageToChat(question, 'user');
+            document.getElementById('questionInput').value = 'Thinking...';
+            document.getElementById('questionInput').disabled = true;
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/ask/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: question })
+                });
+                if (!response.ok) throw new Error('Network response was not ok');
+                const result = await response.json();
+                
+                // Display twin's answer
+                addMessageToChat(result.answer, 'twin');
+                
+            } catch (error) {
+                console.error('Error:', error);
+                addMessageToChat("I'm having trouble connecting to my memories right now.", 'twin');
+            } finally {
+                // Re-enable input
+                document.getElementById('questionInput').value = '';
+                document.getElementById('questionInput').disabled = false;
+            }
+        }
+
+        function addMessageToChat(text, sender) {
+            const chatHistory = document.getElementById('chat-history');
+            const messageEl = document.createElement('div');
+            messageEl.classList.add('chat-message', sender === 'user' ? 'user-message' : 'twin-message');
+            messageEl.textContent = text;
+            chatHistory.appendChild(messageEl);
+            // Scroll to the bottom
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        // Allow pressing Enter to ask question
+        document.getElementById('questionInput').addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                document.getElementById('askButton').click();
+            }
+        });
     </script>
 </body>
 </html>
