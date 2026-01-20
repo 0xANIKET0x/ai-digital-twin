@@ -4,7 +4,7 @@
 
 This project is an intelligent, personal journaling system. It not only stores your daily thoughts but also analyzes their mood and, most importantly, allows you to ask questions in plain English to reflect on your past experiences. The entire AI pipeline runs locally, ensuring your data remains completely private.
 
-![AI Digital Twin Screenshot](https://imgur.com/a/s5CO07q)
+![AI Digital Twin Screenshot](https://i.imgur.com/aIvGM9l.png)
 
 ---
 
