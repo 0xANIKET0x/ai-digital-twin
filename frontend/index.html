@@ -3,104 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Digital Twin</title>
+    <title>Your Digital Twin</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f9; color: #333; margin: 0; padding: 1rem; }
-        #main-container { display: flex; gap: 2rem; max-width: 1200px; margin: auto; }
-        .panel { flex: 1; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        h1, h2 { text-align: center; color: #4a4a4a; }
-        textarea { width: 100%; height: 150px; padding: 10px; border-radius: 4px; border: 1px solid #ccc; font-size: 1rem; margin-bottom: 1rem; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; font-size: 1.1rem; cursor: pointer; transition: background-color 0.2s; }
-        button:hover { background-color: #0056b3; }
-        #status { text-align: center; margin-top: 1rem; color: green; min-height: 1.2em; }
-        /* Chat styles */
-        #chat-history { height: 300px; border: 1px solid #ccc; border-radius: 4px; padding: 1rem; overflow-y: auto; margin-bottom: 1rem; background-color: #f9f9f9; }
-        #chat-input { display: flex; gap: 1rem; }
-        #questionInput { flex-grow: 1; padding: 10px; border-radius: 4px; border: 1px solid #ccc; }
-        #askButton { flex-shrink: 0; width: auto; padding: 0 1.5rem; }
-        .chat-message { margin-bottom: 0.8rem; }
-        .user-message { text-align: right; color: #0056b3; }
-        .twin-message { text-align: left; background-color: #e9e9eb; padding: 0.5rem 1rem; border-radius: 12px; }
+        /* --- The stunning CSS from our last version remains unchanged --- */
+        :root {
+            --font-main: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --bg-light: #f8fafc; --panel-bg-light: rgba(255, 255, 255, 0.6); --text-light: #0f172a; --heading-light: #020617; --border-light: rgba(226, 232, 240, 0.7); --shadow-light: rgba(99, 102, 241, 0.1);
+            --bg-dark: #020617; --panel-bg-dark: rgba(30, 41, 59, 0.5); --text-dark: #cbd5e1; --heading-dark: #f8fafc; --border-dark: rgba(51, 65, 85, 0.5); --shadow-dark: rgba(0, 0, 0, 0.2);
+            --gradient-start: #22d3ee; --gradient-end: #d946ef;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        body { font-family: var(--font-main); margin: 0; padding: 2rem; transition: background-color 0.5s ease, color 0.5s ease; overflow-x: hidden; background-color: var(--bg-dark); color: var(--text-dark); }
+        .background-gradient { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end), #4f46e5); filter: blur(100px); animation: gradient-pan 20s ease infinite alternate; }
+        @keyframes gradient-pan { 0% { transform: scale(1.2) translate(-10%, -10%); } 100% { transform: scale(1.2) translate(10%, 10%); } }
+        .main-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 2rem; max-width: 1600px; margin: auto; }
+        .main-content, .side-panel { display: flex; flex-direction: column; gap: 2rem; }
+        .side-panel { position: sticky; top: 2rem; height: calc(100vh - 4rem); }
+        .panel { background: var(--panel-bg-dark); border: 1px solid var(--border-dark); box-shadow: 0 8px 32px 0 var(--shadow-dark); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 16px; padding: 2rem; transition: all 0.5s ease; display: flex; flex-direction: column; }
+        .panel h2 { font-weight: 700; color: var(--heading-dark); margin: 0 0 1.5rem 0; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-dark); }
+        body.light-mode { background-color: var(--bg-light); color: var(--text-light); }
+        .light-mode .panel { background: var(--panel-bg-light); border: 1px solid var(--border-light); box-shadow: 0 8px 32px 0 var(--shadow-light); }
+        .light-mode .panel h2 { color: var(--heading-light); border-color: var(--border-light); }
+        .light-mode .twin-message { background: #e2e8f0; }
+        .light-mode input, .light-mode textarea { background-color: #f8fafc; color: var(--text-light); border-color: var(--border-light); }
+        textarea, input[type="text"], input[type="date"] { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-dark); background-color: #0f172a; color: var(--text-dark); font-size: 1rem; font-family: var(--font-main); margin-bottom: 1rem; box-sizing: border-box; transition: all 0.2s ease; }
+        textarea:focus, input:focus { outline: none; border-color: var(--gradient-start); box-shadow: 0 0 0 3px color-mix(in srgb, var(--gradient-start) 20%, transparent); }
+        button { padding: 12px 20px; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; background-image: linear-gradient(to right, var(--gradient-start) 0%, var(--gradient-end) 50%, var(--gradient-start) 100%); background-size: 200% auto; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        button:hover { background-position: right center; transform: scale(1.03); }
+        #status { text-align: center; margin-top: 1rem; font-weight: 500; min-height: 1.2em; }
+        .success { color: #34d399; }
+        .error { color: #f87171; }
+        .chat-container { flex: 1; overflow: hidden; }
+        #chat-history, #date-search-results { flex-grow: 1; height: 250px; border: none; background: none; overflow-y: auto; margin-bottom: 1rem; padding: 0 0.5rem; scroll-behavior: smooth; }
+        .chat-message { max-width: 85%; word-wrap: break-word; padding: 0.75rem 1.25rem; border-radius: 1rem; margin-bottom: 0.75rem; line-height: 1.5; animation: pop-in 0.3s ease; }
+        .user-message { margin-left: auto; color: white; background-image: linear-gradient(to top right, var(--gradient-start), var(--gradient-end)); border-bottom-right-radius: 2px; }
+        .twin-message { margin-right: auto; background: var(--border-dark); border-bottom-left-radius: 2px; }
+        @keyframes pop-in { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        .date-entry { border-bottom: 1px solid var(--border-dark); padding: 0.75rem 0.25rem; opacity: 0.9; transition: opacity 0.2s ease; }
+        .date-entry:hover { opacity: 1; }
+        .date-entry:last-child { border-bottom: none; }
+        .date-entry small { color: #94a3b8; font-size: 0.8rem; }
+        .icon { width: 1.2em; height: 1.2em; stroke-width: 2; }
+        #theme-switcher { position: fixed; top: 1.5rem; right: 1.5rem; background: var(--panel-bg-dark); border: 1px solid var(--border-dark); border-radius: 50%; cursor: pointer; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(12px); transition: all 0.3s ease; }
+        .light-mode #theme-switcher { background: var(--panel-bg-light); border: 1px solid var(--border-light); }
+        #theme-switcher:hover { transform: scale(1.1) rotate(15deg); }
+        @media (max-width: 1200px) { .main-grid { grid-template-columns: 1fr; } .side-panel { position: static; height: auto; } }
     </style>
 </head>
 <body>
-    <div id="main-container">
-        <!-- Panel 1: Journal Entry -->
-        <div id="journal-panel" class="panel">
-            <h2>Write a Journal Entry</h2>
-            <textarea id="journalInput" placeholder="What's on your mind?"></textarea>
-            <button onclick="submitEntry()">Save Entry</button>
-            <p id="status"></p>
+    <div class="background-gradient"></div>
+
+    <div id="theme-switcher" onclick="toggleDarkMode()" title="Toggle Theme">
+        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+    </div>
+
+    <div class="main-grid">
+        <div class="main-content">
+            <!-- UX Change: Title is now more inviting -->
+            <div class="panel">
+                <h2>What's on Your Mind?</h2>
+                <textarea id="journalInput" placeholder="Capture a thought, a feeling, a moment..." rows="5"></textarea>
+                <!-- UX Change: Button text is more personal -->
+                <button onclick="submitEntry()">
+                    <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    Save this Thought
+                </button>
+                <p id="status"></p>
+            </div>
+            <!-- UX Change: Title is more descriptive -->
+            <div class="panel">
+                <h2>Search Your Journal</h2>
+                <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+                    <label for="start-date" style="font-weight: 500;">From:</label>
+                    <input type="date" id="start-date" style="margin-bottom: 0;">
+                    <label for="end-date" style="font-weight: 500;">To:</label>
+                    <input type="date" id="end-date" style="margin-bottom: 0;">
+                    <button onclick="searchByDateRange()" style="width: auto;">Search</button>
+                </div>
+                <div id="date-search-results" style="height: 400px;"></div>
+            </div>
         </div>
 
-        <!-- Panel 2: Chat with Twin -->
-        <div id="chat-panel" class="panel">
-            <h2>Ask Your Twin</h2>
-            <div id="chat-history"></div>
-            <div id="chat-input">
-                <input type="text" id="questionInput" placeholder="Ask about your past thoughts...">
-                <button id="askButton" onclick="askTwin()">Ask</button>
+        <div class="side-panel">
+            <!-- UX Change: Title is simpler -->
+            <div class="panel chat-container">
+                <h2>Ask Your Twin</h2>
+                <div id="chat-history"></div>
+                <div style="display: flex; gap: 1rem;">
+                    <input type="text" id="questionInput" placeholder="Ask about your past..." style="margin-bottom: 0;">
+                    <button id="askButton" onclick="askTwin()" style="width: auto;" title="Ask Question">
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    </button>
+                </div>
+            </div>
+            <!-- UX Change: Title is non-technical -->
+            <div class="panel timeline-container">
+                <h2>Mood Timeline</h2>
+                <div style="position: relative; height: 100%;">
+                    <canvas id="sentimentChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // --- Journal Entry Submission (from Phase 2) ---
+        const API_BASE_URL = 'http://127.0.0.1:8000';
+        let sentimentChartInstance;
+
+        // --- JavaScript with UX Writing Updates ---
+
         async function submitEntry() {
             const content = document.getElementById('journalInput').value;
             const statusEl = document.getElementById('status');
             if (!content) { alert('Please write something.'); return; }
-            statusEl.textContent = 'Analyzing and Saving...';
+            statusEl.textContent = 'Saving...'; statusEl.className = '';
             try {
-                const response = await fetch('http://127.0.0.1:8000/entries/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ content: content })
-                });
-                if (!response.ok) throw new Error('Network response was not ok');
-                const result = await response.json();
-                const sentiment = result.entry.sentiment;
-                statusEl.textContent = `Saved! The sentiment seems ${sentiment}.`;
+                await fetch(`${API_BASE_URL}/entries/`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content }) });
+                // UX Change: Warmer confirmation message
+                statusEl.textContent = "Saved! I'll remember this."; statusEl.className = 'success';
                 document.getElementById('journalInput').value = '';
-            } catch (error) {
-                console.error('Error:', error);
-                statusEl.textContent = 'Failed to save. Is the backend running?';
-                statusEl.style.color = 'red';
+                renderSentimentChart();
+            } catch (error) { 
+                // UX Change: Friendlier error message
+                statusEl.textContent = 'Oops! Could not connect.'; statusEl.className = 'error'; 
             }
-            setTimeout(() => { statusEl.textContent = ''; statusEl.style.color = 'green'; }, 4000);
+            setTimeout(() => { statusEl.textContent = ''; statusEl.className = ''; }, 3000);
         }
 
-        // --- NEW: Chat with Twin Functionality ---
         async function askTwin() {
             const question = document.getElementById('questionInput').value;
-            const chatHistory = document.getElementById('chat-history');
-            if (!question) { alert('Please ask a question.'); return; }
-
-            // Display user's question
+            if (!question) { return; }
             addMessageToChat(question, 'user');
-            document.getElementById('questionInput').value = 'Thinking...';
+            document.getElementById('questionInput').value = '';
             document.getElementById('questionInput').disabled = true;
-
             try {
-                const response = await fetch('http://127.0.0.1:8000/ask/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ question: question })
-                });
-                if (!response.ok) throw new Error('Network response was not ok');
+                const response = await fetch(`${API_BASE_URL}/ask/`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question }) });
                 const result = await response.json();
-                
-                // Display twin's answer
                 addMessageToChat(result.answer, 'twin');
-                
-            } catch (error) {
-                console.error('Error:', error);
-                addMessageToChat("I'm having trouble connecting to my memories right now.", 'twin');
-            } finally {
-                // Re-enable input
-                document.getElementById('questionInput').value = '';
-                document.getElementById('questionInput').disabled = false;
-            }
+            } catch (error) { 
+                addMessageToChat("Oops! I can't access my memories right now.", 'twin'); 
+            } 
+            finally { document.getElementById('questionInput').disabled = false; document.getElementById('questionInput').focus(); }
         }
 
         function addMessageToChat(text, sender) {
@@ -109,16 +153,89 @@
             messageEl.classList.add('chat-message', sender === 'user' ? 'user-message' : 'twin-message');
             messageEl.textContent = text;
             chatHistory.appendChild(messageEl);
-            // Scroll to the bottom
             chatHistory.scrollTop = chatHistory.scrollHeight;
         }
 
-        // Allow pressing Enter to ask question
-        document.getElementById('questionInput').addEventListener('keyup', function(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                document.getElementById('askButton').click();
-            }
+        async function searchByDateRange() {
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+            const resultsDiv = document.getElementById('date-search-results');
+            if (!startDate || !endDate) { alert('Please select both a start and end date.'); return; }
+            resultsDiv.innerHTML = '<p style="text-align: center;">Looking through your journal...</p>';
+            try {
+                const response = await fetch(`${API_BASE_URL}/entries_by_date_range/?start_date=${startDate}&end_date=${endDate}`);
+                const entries = await response.json();
+                if (entries.length === 0) {
+                    resultsDiv.innerHTML = '<p style="text-align: center; opacity: 0.7;">No thoughts found in this date range.</p>';
+                } else {
+                    resultsDiv.innerHTML = '';
+                    entries.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).forEach(entry => {
+                        const entryEl = document.createElement('div');
+                        entryEl.className = 'date-entry';
+                        const time = new Date(entry.timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+                        // UX Change: Friendlier description
+                        entryEl.innerHTML = `<p>${entry.content}</p><small>Saved on ${time} — Your mood was ${entry.sentiment}</small>`;
+                        resultsDiv.appendChild(entryEl);
+                    });
+                }
+            } catch (error) { resultsDiv.innerHTML = '<p style="text-align: center;" class="error">Oops! Could not retrieve those memories.</p>'; }
+        }
+
+        async function renderSentimentChart() {
+            // This function's logic is perfect, no UX changes needed here.
+            try {
+                const response = await fetch(`${API_BASE_URL}/sentiment_over_time/`);
+                const data = await response.json();
+                const isDark = !document.body.classList.contains('light-mode');
+                const textColor = isDark ? '#cbd5e1' : '#334155';
+                const gridColor = isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(226, 232, 240, 0.7)';
+                const labels = data.map(d => new Date(d.timestamp).toLocaleDateString());
+                const sentimentScores = data.map(d => d.sentiment === 'positive' ? 1 : (d.sentiment === 'negative' ? -1 : 0));
+                const ctx = document.getElementById('sentimentChart').getContext('2d');
+                if (sentimentChartInstance) sentimentChartInstance.destroy();
+                sentimentChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Mood Trend',
+                            data: sentimentScores,
+                            borderColor: 'var(--gradient-start)',
+                            pointBackgroundColor: 'var(--gradient-end)',
+                            pointBorderColor: '#fff',
+                            pointHoverRadius: 7, pointRadius: 5, fill: true, tension: 0.4,
+                            backgroundColor: (context) => {
+                                const chart = context.chart; const {ctx, chartArea} = chart;
+                                if (!chartArea) return null;
+                                const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                                gradient.addColorStop(0, 'rgba(217, 70, 239, 0)'); gradient.addColorStop(1, 'rgba(34, 211, 238, 0.3)');
+                                return gradient;
+                            }
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { ticks: { color: textColor, callback: (v) => { if (v === 1) return 'Positive'; if (v === -1) return 'Negative'; if (v === 0) return 'Neutral'; } } },
+                            x: { ticks: { color: textColor }, grid: { display: false } }
+                        }
+                    }
+                });
+            } catch (error) { console.error("Could not render mood chart:", error); }
+        }
+
+        function toggleDarkMode() {
+            const body = document.body;
+            body.classList.toggle('light-mode');
+            localStorage.setItem('theme', body.classList.contains('light-mode') ? 'light' : 'dark');
+            renderSentimentChart();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('theme') === 'light') { document.body.classList.add('light-mode'); }
+            renderSentimentChart();
+            document.getElementById('questionInput').addEventListener('keyup', (e) => { if (e.key === 'Enter') document.getElementById('askButton').click(); });
         });
     </script>
 </body>
