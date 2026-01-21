@@ -21,7 +21,7 @@ This project is an intelligent, personal journaling system. It not only stores y
 ## 🛠️ Tech Stack
 
 - **Backend:** Python, FastAPI, Transformers, PyTorch, Sentence-Transformers, spaCy
-- **Frontend:** HTML, CSS, JavaScript, Chart.js
+- **Frontend:** HTML, CSS, JavaScript, Chart.js,React.js,Node.js
 - **AI Models:**
   - `multi-qa-MiniLM-L6-cos-v1` (for relevance search)
   - `distilbert-base-cased-distilled-squad` (for question-answering)
